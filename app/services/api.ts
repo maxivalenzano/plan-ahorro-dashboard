@@ -36,7 +36,9 @@ export async function fetchNissanData(): Promise<NissanApiData> {
         // Filtrar movimientos de cuotas mensuales y seguros
         const relevantMovements = statement.filter(
             (item) =>
-                item.motionDescription === 'COBRO DE CUOTA MENSUAL' || item.motionDescription === 'SEGURO VEHICULO'
+                item.motionDescription === 'COBRO DE CUOTA MENSUAL' ||
+                item.motionDescription === 'SEGURO VEHICULO' ||
+                item.motionDescription === 'ADHESION'
         );
 
         // Agrupar movimientos por mes y sumar los montos
