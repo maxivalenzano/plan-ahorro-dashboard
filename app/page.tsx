@@ -103,8 +103,8 @@ export default function Dashboard() {
             <div className='max-w-7xl mx-auto'>
                 {/* Header */}
                 <div className='text-center mb-8'>
-                    <h1 className='text-4xl font-bold text-slate-800 mb-2'>Dashboard de Planes de Ahorro</h1>
-                    <p className='text-slate-600'>Seguimiento de progreso y conversión histórica USD/ARS</p>
+                    <h1 className='text-4xl font-bold text-slate-800 mb-2'>Planes de Ahorro</h1>
+                    <p className='text-slate-600'>Seguimiento de progreso y conversión USD/ARS</p>
                 </div>
 
                 {/* Error State */}
