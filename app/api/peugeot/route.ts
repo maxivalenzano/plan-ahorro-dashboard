@@ -5,13 +5,22 @@ const PEUGEOT_API_BASE_URL = "https://www.peugeotplan.com.ar"
 export async function POST(request: Request) {
   try {
     const { documentNumber, password, documentType, brand } = await request.json()
+    
+    // Obtener cookies del request entrante desde los headers
+    const cookieHeader = request.headers.get('cookie') || ''
+    
+    // Extraer cookie específica o usar fallback
+    const cookieBotMatch = cookieHeader.match(/Cookie_bot=([^;]+)/)
+    const cookieBotValue = cookieBotMatch ? cookieBotMatch[1] : 'd5c55436e8e4d3206105930d69faca28'
+    
+    const finalCookieString = `Cookie_bot=${cookieBotValue}`
 
     const url = `${PEUGEOT_API_BASE_URL}/security/validateUser/${documentNumber}/${password}/${documentType}/${brand}`
     
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        "Cookie": "Cookie_bot=d5c55436e8e4d3206105930d69faca28"
+        "Cookie": finalCookieString
       }
     })
 
@@ -38,6 +47,15 @@ export async function GET(request: Request) {
       )
     }
 
+    // Obtener cookies del request entrante desde los headers
+    const cookieHeader = request.headers.get('cookie') || ''
+    
+    // Extraer cookie específica o usar fallback
+    const cookieBotMatch = cookieHeader.match(/Cookie_bot=([^;]+)/)
+    const cookieBotValue = cookieBotMatch ? cookieBotMatch[1] : 'd5c55436e8e4d3206105930d69faca28'
+    
+    const finalCookieString = `Cookie_bot=${cookieBotValue}`
+
     const url = `${PEUGEOT_API_BASE_URL}/services/tuscuotas/content/3303/150`
     
     const response = await fetch(url, {
@@ -45,7 +63,7 @@ export async function GET(request: Request) {
       headers: {
         "Authorization": token,
         "Accept": "application/json, text/plain, */*",
-        "Cookie": "Cookie_bot=d5c55436e8e4d3206105930d69faca28"
+        "Cookie": finalCookieString
       }
     })
 
