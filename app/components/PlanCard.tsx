@@ -13,10 +13,11 @@ interface PlanCardProps {
   brand: "peugeot" | "nissan"
   planData: PlanData | null
   isLoading: boolean
+  error?: string | null
   onViewDetails?: () => void
 }
 
-export function PlanCard({ title, brand, planData, isLoading, onViewDetails }: PlanCardProps) {
+export function PlanCard({ title, brand, planData, isLoading, error, onViewDetails }: PlanCardProps) {
   const brandColors = {
     peugeot: "from-blue-500 to-blue-600",
     nissan: "from-red-500 to-red-600",
@@ -41,6 +42,9 @@ export function PlanCard({ title, brand, planData, isLoading, onViewDetails }: P
     )
   }
 
+  // Mostrar error si existe, pero aún mostrar datos si están disponibles
+  const hasError = !!error;
+  
   if (!planData) {
     return (
       <Card className="h-full">
@@ -51,7 +55,16 @@ export function PlanCard({ title, brand, planData, isLoading, onViewDetails }: P
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-500">No se pudieron cargar los datos</p>
+          {hasError ? (
+            <div className="space-y-2">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-800 text-sm">{error}</p>
+              </div>
+              <p className="text-slate-500 text-sm">No hay datos almacenados disponibles</p>
+            </div>
+          ) : (
+            <p className="text-slate-500">No se pudieron cargar los datos</p>
+          )}
         </CardContent>
       </Card>
     )
@@ -66,6 +79,14 @@ export function PlanCard({ title, brand, planData, isLoading, onViewDetails }: P
           <Car className="h-5 w-5" />
           {title}
         </CardTitle>
+        
+        {/* Mostrar error si existe */}
+        {hasError && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+            <p className="text-amber-800 text-sm">{error}</p>
+          </div>
+        )}
+        
         <div className="space-y-2">
           <p className="text-sm font-medium text-slate-700">{planData.modelName}</p>
           <div className="flex items-center gap-2">

@@ -101,9 +101,7 @@ export class NissanService {
     }
 
     private async ensureAuthenticated(config: NissanAuthConfig): Promise<void> {
-        if (!this.token || !this.uidQuota || this.isTokenExpired()) {
-            await this.login(config);
-        }
+        await this.login(config);
     }
 
     async fetchStatement(config: NissanAuthConfig): Promise<NissanStatementItem[]> {

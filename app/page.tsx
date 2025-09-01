@@ -20,64 +20,90 @@ export default function Dashboard() {
     const [selectedPlan, setSelectedPlan] = useState<'peugeot' | 'nissan' | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [lastUpdate, setLastUpdate] = useState<string>('');
+    
+    // Estados individuales para cada plan
+    const [peugeotLoading, setPeugeotLoading] = useState(true);
+    const [nissanLoading, setNissanLoading] = useState(true);
+    const [peugeotError, setPeugeotError] = useState<string | null>(null);
+    const [nissanError, setNissanError] = useState<string | null>(null);
 
     useEffect(() => {
         const loadDashboardData = async () => {
-            try {
-                setLoading(true);
-                setError(null);
+            setLoading(true);
+            setError(null);
+            setPeugeotLoading(true);
+            setNissanLoading(true);
+            setPeugeotError(null);
+            setNissanError(null);
 
-                // Intentar cargar datos del localStorage primero
-                const storedData = storageService.getData();
-                if (storedData) {
-                    setPeugeotPlan(storedData.peugeotPlan);
-                    setNissanPlan(storedData.nissanPlan);
-                    setPeugeotInstallments(storedData.peugeotInstallments);
-                    setNissanInstallments(storedData.nissanInstallments);
-                    setLastUpdate(storedData.lastUpdate);
-                }
-
-                try {
-                    // Intentar obtener datos actualizados de las APIs
-                    const [peugeotData, nissanData, dollarRates] = await Promise.all([
-                        fetchPeugeotData(),
-                        fetchNissanData(),
-                        fetchDollarRates(),
-                    ]);
-
-                    // Procesar los datos
-                    const processedPeugeot = processPeugeotData(peugeotData, dollarRates);
-                    const processedNissan = processNissanData(nissanData, dollarRates);
-                    const peugeotInstallmentDetails = processPeugeotInstallments(peugeotData, dollarRates);
-                    const nissanInstallmentDetails = processNissanInstallments(nissanData, dollarRates);
-
-                    // Actualizar el estado
-                    setPeugeotPlan(processedPeugeot);
-                    setNissanPlan(processedNissan);
-                    setPeugeotInstallments(peugeotInstallmentDetails);
-                    setNissanInstallments(nissanInstallmentDetails);
-                    setLastUpdate(new Date().toISOString());
-
-                    // Guardar en localStorage
-                    storageService.saveData({
-                        peugeotPlan: processedPeugeot,
-                        nissanPlan: processedNissan,
-                        peugeotInstallments: peugeotInstallmentDetails,
-                        nissanInstallments: nissanInstallmentDetails,
-                        lastUpdate: new Date().toISOString(),
-                    });
-                } catch (apiError) {
-                    console.error('Error al obtener datos de las APIs:', apiError);
-                    if (!storedData) {
-                        throw apiError; // Solo lanzar error si no hay datos almacenados
-                    }
-                }
-            } catch (err) {
-                setError('Error al cargar los datos de los planes. Por favor, intenta nuevamente.');
-                console.error('Dashboard loading error:', err);
-            } finally {
-                setLoading(false);
+            // Intentar cargar datos del localStorage primero
+            const storedData = storageService.getData();
+            if (storedData) {
+                setPeugeotPlan(storedData.peugeotPlan);
+                setNissanPlan(storedData.nissanPlan);
+                setPeugeotInstallments(storedData.peugeotInstallments);
+                setNissanInstallments(storedData.nissanInstallments);
+                setLastUpdate(storedData.lastUpdate);
             }
+
+            // Obtener tasas de dólar (necesarias para ambos planes)
+            let dollarRates: any;
+            try {
+                dollarRates = await fetchDollarRates();
+            } catch (dollarError) {
+                console.error('Error al obtener tasas de dólar:', dollarError);
+                // Si no podemos obtener las tasas de dólar, usar datos almacenados si existen
+                setLoading(false);
+                if (!storedData) {
+                    setError('Error al obtener las tasas de cambio. Por favor, intenta nuevamente.');
+                }
+                return;
+            }
+
+            // Manejar Peugeot de forma independiente
+            const loadPeugeotData = async () => {
+                try {
+                    const peugeotData = await fetchPeugeotData();
+                    const processedPeugeot = processPeugeotData(peugeotData, dollarRates);
+                    const peugeotInstallmentDetails = processPeugeotInstallments(peugeotData, dollarRates);
+                    
+                    setPeugeotPlan(processedPeugeot);
+                    setPeugeotInstallments(peugeotInstallmentDetails);
+                    setPeugeotError(null);
+                } catch (error) {
+                    console.error('Error al obtener datos de Peugeot:', error);
+                    setPeugeotError('Error al cargar datos de Peugeot. Mostrando datos almacenados.');
+                } finally {
+                    setPeugeotLoading(false);
+                }
+            };
+
+            // Manejar Nissan de forma independiente
+            const loadNissanData = async () => {
+                try {
+                    const nissanData = await fetchNissanData();
+                    const processedNissan = processNissanData(nissanData, dollarRates);
+                    const nissanInstallmentDetails = processNissanInstallments(nissanData, dollarRates);
+                    
+                    setNissanPlan(processedNissan);
+                    setNissanInstallments(nissanInstallmentDetails);
+                    setNissanError(null);
+                } catch (error) {
+                    console.error('Error al obtener datos de Nissan:', error);
+                    setNissanError('Error al cargar datos de Nissan. Mostrando datos almacenados.');
+                } finally {
+                    setNissanLoading(false);
+                }
+            };
+
+            // Ejecutar ambas llamadas en paralelo pero manejar errores individualmente
+            const results = await Promise.allSettled([loadPeugeotData(), loadNissanData()]);
+
+            // Guardar datos actualizados en localStorage
+            const currentTime = new Date().toISOString();
+            setLastUpdate(currentTime);
+
+            setLoading(false);
         };
 
         loadDashboardData();
@@ -120,14 +146,16 @@ export default function Dashboard() {
                         title='Plan Peugeot'
                         brand='peugeot'
                         planData={peugeotPlan}
-                        isLoading={loading}
+                        isLoading={peugeotLoading}
+                        error={peugeotError}
                         onViewDetails={handleViewPeugeotDetails}
                     />
                     <PlanCard
                         title='Plan Nissan'
                         brand='nissan'
                         planData={nissanPlan}
-                        isLoading={loading}
+                        isLoading={nissanLoading}
+                        error={nissanError}
                         onViewDetails={handleViewNissanDetails}
                     />
                 </div>

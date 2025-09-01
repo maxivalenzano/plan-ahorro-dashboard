@@ -32,6 +32,7 @@ export class PeugeotService {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include', // Incluir cookies automáticamente
             body: JSON.stringify(config),
         });
 
@@ -39,10 +40,39 @@ export class PeugeotService {
             throw new Error(`Error en la autenticación: ${response.statusText}`);
         }
 
-        const data: PeugeotLoginResponse = await response.json();
+        const data = await response.json();
+
+        // Verificar si la respuesta contiene texto/XML (indica problema con la API)
+        if (data.responseText || data.xmlResponse) {
+            // Analizar el contenido de texto para determinar si es exitoso
+            const responseContent = data.responseText || data.xmlResponse || '';
+
+            // Si contiene información que parece un token o éxito, intentar extraerlo
+            if (responseContent.includes('<') && responseContent.includes('>')) {
+                // Es XML, intentar extraer información útil
+                console.log('🚀 ~ login ~ Parsing XML response...');
+
+                // Por ahora, lanzar error informativo hasta que sepamos el formato exacto
+                throw new Error(`La API de Peugeot devolvió XML. Contenido: ${responseContent.substring(0, 500)}...`);
+            } else {
+                // Es texto plano
+                throw new Error(
+                    `La API de Peugeot devolvió texto en lugar de JSON. Contenido: ${responseContent.substring(
+                        0,
+                        200
+                    )}...`
+                );
+            }
+        }
+
+        // Verificar el formato esperado de respuesta JSON
+        if (!data.status) {
+            console.log('🚀 ~ login ~ Unexpected response format:', data);
+            throw new Error(`Respuesta inesperada de la API de Peugeot: ${JSON.stringify(data)}`);
+        }
 
         if (data.status !== 'OK') {
-            throw new Error(`Error en la autenticación: ${data.statusReason}`);
+            throw new Error(`Error en la autenticación: ${data.statusReason || 'Status no OK'}`);
         }
 
         this.token = data.token;
@@ -58,9 +88,7 @@ export class PeugeotService {
     }
 
     private async ensureAuthenticated(config: PeugeotAuthConfig): Promise<void> {
-        if (!this.token || this.isTokenExpired()) {
-            await this.login(config);
-        }
+        await this.login(config);
     }
 
     async fetchPlanData(config: PeugeotAuthConfig): Promise<PeugeotApiData> {
@@ -71,13 +99,40 @@ export class PeugeotService {
             headers: {
                 Accept: 'application/json',
             },
+            credentials: 'include', // Incluir cookies automáticamente
         });
 
         if (!response.ok) {
             throw new Error(`Error al obtener datos del plan: ${response.statusText}`);
         }
 
-        return response.json();
+        const data = await response.json();
+
+        // Verificar si la respuesta contiene texto/XML (indica problema con la API)
+        if (data.responseText || data.xmlResponse) {
+            const responseContent = data.responseText || data.xmlResponse || '';
+
+            if (responseContent.includes('<') && responseContent.includes('>')) {
+                // Es XML, intentar extraer información útil
+                console.log('🚀 ~ fetchPlanData ~ Parsing XML response...');
+                throw new Error(
+                    `La API de Peugeot devolvió XML para datos del plan. Contenido: ${responseContent.substring(
+                        0,
+                        500
+                    )}...`
+                );
+            } else {
+                // Es texto plano
+                throw new Error(
+                    `La API de Peugeot devolvió texto para datos del plan. Contenido: ${responseContent.substring(
+                        0,
+                        200
+                    )}...`
+                );
+            }
+        }
+
+        return data;
     }
 }
 
