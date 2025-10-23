@@ -80,8 +80,8 @@ export class PeugeotService {
 
         // Guardar el token en localStorage
         if (typeof window !== 'undefined') {
-            localStorage.setItem('peugeot_token', data.token);
-            localStorage.setItem('peugeot_token_expiration', this.tokenExpiration.toString());
+            // localStorage.setItem('peugeot_token', data.token);
+            // localStorage.setItem('peugeot_token_expiration', this.tokenExpiration.toString());
         }
 
         return data.token;

@@ -51,8 +51,8 @@ export class NissanService {
 
         // Guardar en localStorage
         if (typeof window !== 'undefined') {
-            localStorage.setItem('nissan_tid', data.tid);
-            localStorage.setItem('nissan_access_code', data.accessCode);
+            // localStorage.setItem('nissan_tid', data.tid);
+            // localStorage.setItem('nissan_access_code', data.accessCode);
         }
 
         return data;
@@ -89,9 +89,9 @@ export class NissanService {
 
         // Guardar en localStorage
         if (typeof window !== 'undefined') {
-            localStorage.setItem('nissan_token', data.token);
-            localStorage.setItem('nissan_uid_quota', data.uidQuota);
-            localStorage.setItem('nissan_token_expiration', this.tokenExpiration.toString());
+            // localStorage.setItem('nissan_token', data.token);
+            // localStorage.setItem('nissan_uid_quota', data.uidQuota);
+            // localStorage.setItem('nissan_token_expiration', this.tokenExpiration.toString());
         }
 
         return {
